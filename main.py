@@ -1,13 +1,15 @@
 from frames import *
 import socket
+import os
 from bitarray import bitarray
+from dotenv import load_dotenv
+
+load_dotenv()
 
 HEADER = 64
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = '!DISCONNECT'
-PORT = 7027
-SERVER = '10.32.14.87'
-ADDR = (SERVER, PORT)
+ADDR = (os.environ.get("SERVER"), os.environ.get("PORT"))
 
 
 if __name__ == "__main__":
