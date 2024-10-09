@@ -1,18 +1,17 @@
-def access_bit(data, byte, bit):
-    byte_value = data[byte]
-    return (byte_value>>bit)&1
+import datetime
 
-def access_bits(data, lpos, rpos):
-    '''
-    lpos and rpos are bit position
-    '''
-    assert lpos < rpos, "incorrect bit position range"
-    l = lpos // 4
-    r = rpos // 4
-    lpos = lpos % 4
-    rpos = rpos % 4
-    lbyte = data[l]
-    rbyte = data[r]
-    lbyte[l:4]
-    lbyte[l:4]
+
+def soc_to_dateTime(soc):
+    timestamp = datetime.datetime.utcfromtimestamp(soc)
+    
+    day = timestamp.strftime('%A')
+    month = timestamp.strftime('%B')
+    date = timestamp.strftime('%d')
+    year = timestamp.strftime('%Y')
+    time = timestamp.strftime('%H:%M:%S')
+
+    return day, month, date, year, time
+
+
+if __name__ == "__main__":
     pass
