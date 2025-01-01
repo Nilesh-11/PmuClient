@@ -111,8 +111,8 @@ DigitalUnit digital_unit_type[],
 PhasorChannelNames VARCHAR(16)[][],
 AnalogChannelNames VARCHAR(16)[][],
 DigitalChannelNames VARCHAR(16)[][],
-NominalFrequency INT,
-ConfigurationChangeCount INT
+NominalFrequency INT[],
+ConfigurationChangeCount INT[]
 '''
 
 data_table_name = "data_frames"

@@ -131,7 +131,7 @@ class DatabaseManager:
             tableName = config_table_name
             columnNames = self.config_column_names
         else:
-            raise NotImplementedError(f"No method to store the frame {frame_type}.")
+            raise NotImplementedError(f"No method to store the frame type {frame_type}.")
         
         placeholders = [f"%s" for _ in range(len(columnNames))]
         
@@ -145,9 +145,12 @@ class DatabaseManager:
             for i in range(len(data)):
                 if cNames[i] == 'phasors':
                     res = format_phasor_type_array(data[i])
+                elif cNames[i] == 'phasorunit':
+                    res = format_phasor_unit_type_array(data[i])
                 elif cNames[i] == 'analogunit':
-                    res = format_phasor_type_array(data[i])
-                    pass
+                    res = format_analog_unit_type_array(data[i])
+                elif cNames[i] == 'digitalunit':
+                    res = format_digital_unit_type_array(data[i])
                 else:
                     res = f'\'' + convert_to_postgres_datatype(data[i]) + f'\''
                 row.append(res)

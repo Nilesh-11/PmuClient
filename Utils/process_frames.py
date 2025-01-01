@@ -15,13 +15,19 @@ def process_strings(frame, handle=None):
     return balance_size(phr, dummy)
 
 def process_tuples(frame, handle="phasor"):
-    dummy = (None, None) if handle == "phasor" else None
+    dummy = None if handle == "analog" or handle == "digital" else (None, None)
     if handle == "phasor":
         phr = [data.phasors for data in frame.pmu_data]
     elif handle == "analog":
         phr = [data.analog for data in frame.pmu_data]
     elif handle == "digital":
         phr = [data.digital for data in frame.pmu_data]
+    elif handle == "phasor_unit":
+        phr = [data.phunit for data in frame.pmus]
+    elif handle == "analog_unit":
+        phr = [data.anunit for data in frame.pmus]
+    elif handle == "digital_unit":
+        phr = [data.dgunit for data in frame.pmus]
     else:
         raise NotImplementedError(f"Error: Not a measured quanity {handle}.")
     return balance_size(phr, dummy)
@@ -81,11 +87,11 @@ def process_cfg1Frame(cfgFrame):
             [data.stn for data in cfgFrame.pmus],
             [data.data_idcode for data in cfgFrame.pmus],
             [data.phnmr for data in cfgFrame.pmus],
-            [data.phunit for data in cfgFrame.pmus],
+            process_tuples(cfgFrame, "phasor_unit"),
             [data.annmr for data in cfgFrame.pmus],
-            [data.anunit for data in cfgFrame.pmus],
+            process_tuples(cfgFrame, "analog_unit"),
             [data.dgnmr for data in cfgFrame.pmus],
-            [data.dgunit for data in cfgFrame.pmus],
+            process_tuples(cfgFrame, "digital_unit"),
             process_strings(cfgFrame, "phasor"),
             process_strings(cfgFrame, "analog"),
             process_strings(cfgFrame, "digital"),

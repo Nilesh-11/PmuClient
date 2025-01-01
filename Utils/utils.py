@@ -15,14 +15,34 @@ def format_phasor_type_array(arrays):
         res.append("ARRAY[" + ",".join(ar) + "]")
     return "ARRAY[" + ",".join(res) + "]::phasor_type[][]"
 
+def format_phasor_unit_type_array(arrays):
+    """Formats a list of tuples as a PostgreSQL phasor_unit_type[] array."""
+    res = []
+    for tupleArray in arrays:
+        ar = [
+                f"({str(p[0]) if p[0] is not None else 'NULL'}," + f"'{p[1]}')" if p[1] is not None else "NULL)"
+                for p in tupleArray
+            ]
+        res.append("ARRAY[" + ",".join(ar) + "]")
+    return "ARRAY[" + ",".join(res) + "]::phasor_unit_type[][]"
+
 def format_analog_unit_type_array(arrays):
     """Formats a list of tuples as a PostgreSQL analog_unit_type[] array."""
     res = []
     for tupleArray in arrays:
-        ar = [f"({str(p[0]) if p[0] is not None else 'NULL'},{str(p[1]) if p[1] is not None else 'NULL'})" 
+        ar = [f"({str(p[0]) if p[0] is not None else 'NULL'}," + f"'{p[1]}')" if p[1] is not None else "NULL)"
                 for p in tupleArray]
         res.append("ARRAY[" + ",".join(ar) + "]")
     return "ARRAY[" + ",".join(res) + "]::analog_unit_type[][]"
+
+def format_digital_unit_type_array(arrays):
+    """Formats a list of tuples as a PostgreSQL digital_unit_type[] array."""
+    res = []
+    for tupleArray in arrays:
+        ar = [f"({str(p[0]) if p[0] is not None else 'NULL'}," + f"'{p[1]}')" if p[1] is not None else "NULL)"
+                for p in tupleArray]
+        res.append("ARRAY[" + ",".join(ar) + "]")
+    return "ARRAY[" + ",".join(res) + "]::digital_unit_type[][]"
 
 def convert_to_postgres_datatype(array):
     """
@@ -30,7 +50,6 @@ def convert_to_postgres_datatype(array):
     
     Args:
     - array: The input data (can be a list, tuple, or single value).
-    - column_name: The name of the column for specific handling (optional).
     
     Returns:
     - str: PostgreSQL-compatible representation of the input data.
@@ -111,6 +130,3 @@ def plot_figure(file_path):
     # Adjust layout and show the plots
     plt.tight_layout()
     plt.show()
-
-if __name__ == "__main__":
-    pass
