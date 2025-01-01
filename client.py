@@ -48,7 +48,7 @@ class client(object):
                 raise ConnectionError(f"Socket errror : {e}")
             except:
                 raise RuntimeError("Error in receiving data.")
-
+    
     def update_data(self, data):
         frame_type = get_frame_type(data[0:2])
         assert not(frame_type & 2 != 0 or frame_type == 5) and self.cfg != None, "Configuration frame not found."

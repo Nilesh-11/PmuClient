@@ -5,6 +5,53 @@ import uuid
 import time
 import re
 
+def format_phasor_type_array(arrays):
+    """Formats a list of tuples as a PostgreSQL phasor_type[] array."""
+    res = []
+    for tupleArray in arrays:
+        print(tupleArray)
+        ar = [f"({str(p[0]) if p[0] is not None else 'NULL'},{str(p[1]) if p[1] is not None else 'NULL'})" 
+                for p in tupleArray]
+        res.append("ARRAY[" + ",".join(ar) + "]")
+    return "ARRAY[" + ",".join(res) + "]::phasor_type[][]"
+
+def format_analog_unit_type_array(arrays):
+    """Formats a list of tuples as a PostgreSQL analog_unit_type[] array."""
+    res = []
+    for tupleArray in arrays:
+        ar = [f"({str(p[0]) if p[0] is not None else 'NULL'},{str(p[1]) if p[1] is not None else 'NULL'})" 
+                for p in tupleArray]
+        res.append("ARRAY[" + ",".join(ar) + "]")
+    return "ARRAY[" + ",".join(res) + "]::analog_unit_type[][]"
+
+def convert_to_postgres_datatype(array):
+    """
+    Converts Python objects (list, tuple, or individual values) into PostgreSQL-compatible syntax.
+    
+    Args:
+    - array: The input data (can be a list, tuple, or single value).
+    - column_name: The name of the column for specific handling (optional).
+    
+    Returns:
+    - str: PostgreSQL-compatible representation of the input data.
+    """
+    
+    # General data types
+    if isinstance(array, (int, float)):  # Numbers
+        return str(array)
+    elif isinstance(array, str):  # Strings
+        return f'"{array}"'
+    elif array is None:  # NULL values
+        return "NULL"
+    elif isinstance(array, (list, tuple)):  # Lists and tuples
+        converted_items = [convert_to_postgres_datatype(item) for item in array]
+        if isinstance(array, list):
+            return "{" + ",".join(converted_items) + "}"  # PostgreSQL array
+        elif isinstance(array, tuple):
+            return "(" + ",".join(converted_items) + ")"  # PostgreSQL tuple
+    else:
+        return str(array)  # Fallback for other types
+
 def parse_column_detail(table_definition):
     
     column_names = table_definition
@@ -19,9 +66,9 @@ def generate_unique_identifier(client_address=None, client_port=None):
     unique_id = uuid.uuid4()  # Generate a UUID
     
     if client_address and client_port:
-        identifier = f"{timestamp}-{client_address}:{client_port}-{unique_id}"
+        identifier = f'{timestamp}-{client_address}:{client_port}-{unique_id}'
     else:
-        identifier = f"{timestamp}-{unique_id}"
+        identifier = f'{timestamp}-{unique_id}'
     
     return identifier
 

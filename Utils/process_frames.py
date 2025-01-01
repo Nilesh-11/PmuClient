@@ -2,25 +2,50 @@ import pandas as pd
 from pydantic import BaseModel 
 from Utils.utils import *
 
+def balance_size(phr, dummy):
+    mxlen = max([len(sz) for sz in phr])
+    for ph in phr:
+        while len(ph) < mxlen:
+            ph.append(dummy)
+    return phr
+
+def process_strings(frame, handle=None):
+    dummy = None
+    phr = [data.chnam[handle] for data in frame.pmus]
+    return balance_size(phr, dummy)
+
+def process_tuples(frame, handle="phasor"):
+    dummy = (None, None) if handle == "phasor" else None
+    if handle == "phasor":
+        phr = [data.phasors for data in frame.pmu_data]
+    elif handle == "analog":
+        phr = [data.analog for data in frame.pmu_data]
+    elif handle == "digital":
+        phr = [data.digital for data in frame.pmu_data]
+    else:
+        raise NotImplementedError(f"Error: Not a measured quanity {handle}.")
+    return balance_size(phr, dummy)
+
 def process_dataFrame(frame, cfgFrame):
+    
     data = (frame.soc,
             cfgFrame.identifier,
             frame.num_pmu,
             frame.stream_idcode,
             [data.stn for data in cfgFrame.pmus],
             [data.data_idcode for data in cfgFrame.pmus],
-            [data.chnam["phasor"] for data in cfgFrame.pmus],
-            [data.chnam["analog"] for data in cfgFrame.pmus],
-            [data.chnam["digital"] for data in cfgFrame.pmus],
+            process_strings(cfgFrame, "phasor"),
+            process_strings(cfgFrame, "analog"),
+            process_strings(cfgFrame, "digital"),
             [data.freq for data in frame.pmu_data],
             [data.rocof for data in frame.pmu_data],
             [data.phnmr for data in frame.pmu_data],
             [data.phr_type for data in frame.pmu_data],
-            [data.phasors for data in frame.pmu_data],
+            process_tuples(frame, "phasor"),
             [data.annmr for data in frame.pmu_data],
-            [data.analog for data in frame.pmu_data],
+            process_tuples(frame, "analog"),
             [data.dgnmr for data in frame.pmu_data],
-            [data.digital for data in frame.pmu_data],
+            process_tuples(frame, "digital"),
             [data.data_error for data in frame.pmu_data],
             [data.time_quality for data in frame.pmu_data],
             [data.PMU_sync for data in frame.pmu_data],
@@ -46,26 +71,26 @@ def save_dataFrame_csv(frame, filepath=None):
     data = pd.concat([data, rows], ignore_index=True)
     data.to_csv('./Results/output.csv')
 
-def process_cfg1Frame(frame):
-    data = (frame.soc,
-            frame.identifier,
-            frame.frame_version,
-            frame.stream_idcode,
-            frame.data_rate,
-            frame.num_pmu,
-            [data.stn for data in frame.pmus],
-            [data.data_idcode for data in frame.pmus],
-            [data.phnmr for data in frame.pmus],
-            [data.phunit for data in frame.pmus],
-            [data.annmr for data in frame.pmus],
-            [data.anunit for data in frame.pmus],
-            [data.dgnmr for data in frame.pmus],
-            [data.dgunit for data in frame.pmus],
-            [data.chnam["phasor"] for data in frame.pmus],
-            [data.chnam["analog"] for data in frame.pmus],
-            [data.chnam["digital"] for data in frame.pmus],
-            [data.fnom for data in frame.pmus],
-            [data.cfgcnt for data in frame.pmus],
+def process_cfg1Frame(cfgFrame):
+    data = (cfgFrame.soc,
+            cfgFrame.identifier,
+            cfgFrame.frame_version,
+            cfgFrame.stream_idcode,
+            cfgFrame.data_rate,
+            cfgFrame.num_pmu,
+            [data.stn for data in cfgFrame.pmus],
+            [data.data_idcode for data in cfgFrame.pmus],
+            [data.phnmr for data in cfgFrame.pmus],
+            [data.phunit for data in cfgFrame.pmus],
+            [data.annmr for data in cfgFrame.pmus],
+            [data.anunit for data in cfgFrame.pmus],
+            [data.dgnmr for data in cfgFrame.pmus],
+            [data.dgunit for data in cfgFrame.pmus],
+            process_strings(cfgFrame, "phasor"),
+            process_strings(cfgFrame, "analog"),
+            process_strings(cfgFrame, "digital"),
+            [data.fnom for data in cfgFrame.pmus],
+            [data.cfgcnt for data in cfgFrame.pmus],
             )
     return data
 

@@ -1,7 +1,8 @@
+import time
 import psycopg2
 from psycopg2 import sql, DatabaseError
 from contextlib import contextmanager
-from Utils.utils import parse_column_detail
+from Utils.utils import *
 from Utils.dbInfo import *
 
 class DatabaseManager:
@@ -14,12 +15,14 @@ class DatabaseManager:
         self.port = port
         self.init_query = init_query
         
-        self.execute_query(self.init_query)
-        
         self.data_column_names = [name.lower() for name in parse_column_detail(data_table_details)]
         self.config_column_names = [name.lower() for name in parse_column_detail(config_table_details)]
+
+    def run(self):
+        self.execute_query(self.init_query)
         self.create_table(config_table_name, self.config_column_names, config_table_details)
         self.create_table(data_table_name, self.data_column_names, data_table_details)
+        time.sleep(3)
 
     def _connect(self):
         """Private method to establish a database connection."""
@@ -74,28 +77,6 @@ class DatabaseManager:
             cursor.execute(query, params)
             return cursor.fetchone()
     
-    def store_frame(self, data, frame_type):
-        if frame_type == 0:
-            tableName = data_table_name
-            tableDetails = data_table_details
-        elif frame_type & 2 != 0 or frame_type == 5:
-            tableName = config_table_name
-            tableDetails = config_table_details
-        else:
-            raise NotImplementedError(f"No method to store the frame {frame_type}.")
-        
-        names, placeholders = parse_column_detail(tableDetails)
-        
-        assert len(names) == len(data[0]), f"Number of columns({len(names)}) does not matches with data({len(data[0])})"
-        
-        names = ', '.join(names)
-        placeholders = ', '.join(placeholders)
-
-        for row in data:
-            query = f"INSERT INTO {tableName} ({names}) VALUES ({placeholders});"
-            self.execute_query(query, row)
-
-    
     def create_table(self, table_name, column_names, column_details):
         """
         Creates a new table in PostgreSQL if it doesn't already exist or if the column details are different.
@@ -110,12 +91,10 @@ class DatabaseManager:
             check_table_query = f"""
                 SELECT table_name
                 FROM information_schema.tables
-                WHERE table_schema = 'public' AND table_name = %s;
+                WHERE table_schema = 'public';
             """
             
-            with self.get_cursor() as cursor:
-                cursor.execute(check_table_query, (table_name,))
-                table_exists = cursor.fetchone() is not None
+            table_exists = True if table_name in [names[0] for names in self.fetch_all(check_table_query)] else False
             
             if table_exists:
                 print(f"Table '{table_name}' already exists. Checking columns...")
@@ -126,12 +105,7 @@ class DatabaseManager:
                     FROM information_schema.columns 
                     WHERE table_name = %s;
                 """
-                with self.get_cursor() as cursor:
-                    cursor.execute(check_columns_query, (table_name,))
-                    existing_column_names = [names[0] for names in cursor.fetchall()]
-
-                print("Existing columns:", existing_column_names)
-                print("New columns:", column_names)
+                existing_column_names = [names[0] for names in self.fetch_all(check_columns_query, (table_name,))]
 
                 # Compare existing columns with new ones
                 if existing_column_names == column_names:
@@ -139,7 +113,6 @@ class DatabaseManager:
                     return
                 else:
                     print(f"Table '{table_name}' exists, but columns do not match. Dropping and recreating...")
-                    # Drop the table if columns don't match
                     self.execute_query(f"DROP TABLE IF EXISTS {table_name};")
             
             # Create the table if it does not exist or after dropping it
@@ -150,3 +123,35 @@ class DatabaseManager:
         except Exception as e:
             print(f"Error creating table '{table_name}': {e}")
 
+    def store_frame(self, datas, frame_type):
+        if frame_type == 0:
+            tableName = data_table_name
+            columnNames = self.data_column_names
+        elif frame_type & 2 != 0 or frame_type == 5:
+            tableName = config_table_name
+            columnNames = self.config_column_names
+        else:
+            raise NotImplementedError(f"No method to store the frame {frame_type}.")
+        
+        placeholders = [f"%s" for _ in range(len(columnNames))]
+        
+        assert len(columnNames) == len(datas[0]), f"Number of columns({len(columnNames)}) does not matches with data({len(data[0])})"
+        cNames = columnNames
+        columnNames = ', '.join(columnNames)
+        placeholders = ', '.join(placeholders)
+
+        for data in datas:
+            row = []
+            for i in range(len(data)):
+                if cNames[i] == 'phasors':
+                    res = format_phasor_type_array(data[i])
+                elif cNames[i] == 'analogunit':
+                    res = format_phasor_type_array(data[i])
+                    pass
+                else:
+                    res = f'\'' + convert_to_postgres_datatype(data[i]) + f'\''
+                row.append(res)
+            values = ','.join(row)
+            query = f"INSERT INTO {tableName} ({columnNames}) VALUES ({values});"
+            print(query)
+            self.execute_query(query)
